@@ -2,6 +2,7 @@ plugins {
     id 'org.springframework.boot' version '2.2.1.RELEASE'
     id 'io.spring.dependency-management' version '1.0.8.RELEASE'
     id 'java'
+    id 'idea'
 }
 
 group = 'pl.nullpointerexception'
@@ -16,6 +17,51 @@ repositories {
     mavenCentral()
 }
 
+test {
+    useJUnitPlatform()
+}
+
+ext {
+    integrationTestSrcPath = 'src/integrationTest/'
+}
+
+sourceSets {
+    integrationTest {
+        java {
+            compileClasspath += main.output + test.output + sourceSets.main.compileClasspath
+            runtimeClasspath += main.output + test.output + sourceSets.main.runtimeClasspath
+            srcDir file(integrationTestSrcPath + 'java' )
+        }
+        resources.srcDir file(integrationTestSrcPath + 'resources' )
+    }
+}
+
+configurations {
+    integrationTestCompile.extendsFrom testCompile
+    integrationTestRuntime.extendsFrom testRuntime
+}
+
+task integrationTest( type : Test, group : 'Verification' ) {
+    testClassesDirs = sourceSets.integrationTest.output.classesDirs
+    classpath = sourceSets.integrationTest.runtimeClasspath
+//tests are always out-of-date
+    outputs.upToDateWhen { false }
+}
+
+integrationTest.mustRunAfter test
+
+idea {
+    module {
+        testSourceDirs += project.sourceSets.integrationTest.java.srcDirs
+        testSourceDirs +=
+                project.sourceSets.integrationTest.resources.srcDirs
+    }
+}
+
+integrationTest {
+    useJUnitPlatform()
+}
+
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-web'
@@ -25,8 +71,8 @@ dependencies {
     testImplementation('org.springframework.boot:spring-boot-starter-test') {
         exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
     }
-}
 
-test {
-    useJUnitPlatform()
+    integrationTestImplementation('org.springframework.boot:spring-boot-starter-test') {
+        exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
+    }
 }
